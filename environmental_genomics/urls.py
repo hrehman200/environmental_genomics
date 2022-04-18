@@ -6,10 +6,11 @@ from django.contrib.sitemaps.views import sitemap
 from django.urls import include, path
 from django.conf.urls import url
 from markdownx import urls as markdownx
-# from django.contrib.auth.models import User
 
 # from users import views as user_views
 # from django.contrib.auth import views as auth_views
+
+from . import views
 
 admin.autodiscover()
 
@@ -27,7 +28,11 @@ urlpatterns += [
 
 urlpatterns += [
     path("admin/", admin.site.urls),
-    path("", include("cms.urls")),
+    #path("", include("cms.urls")),
+
+    path('accounts/', include('django.contrib.auth.urls')),
+    url(r'^$', views.index, name='index'),
+
 ]
 
 

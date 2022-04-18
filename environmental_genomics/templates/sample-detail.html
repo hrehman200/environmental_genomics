@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% load render_table from django_tables2 %}
+{% load static %}
+
+{% block title %}Your Samples{% endblock title %}
+
+{% block content %}
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.1.6/Chart.bundle.min.js"></script>
+<div class="content-section container mt-5 mb-5">
+  <div class="row">
+    <div class="col-md-3">
+    </div>
+    <div class="col-md-6">
+      <div class="row my-text mt-5">
+        <h2>Sample Details</h2>
+      </div>
+      <div class="row my_text mt-4 mb-5">
+        <table class="table">
+          <tr>
+            <td><strong>Site</strong></td><td>{{ sample.site }}</td>
+          </tr>
+          <tr>
+            <td><strong>Unit</strong></td><td>{{ sample.unit }}</td>
+          </tr>
+          <tr>
+            <td><strong>Date Sampled</strong></td><td>{{ sample.date_sampled }}</td>
+          </tr>
+          <tr>
+            <td><strong>Date Submitted</strong></td><td>{{ sample.date_submitted }}</td>
+          </tr>
+          <tr>
+            <td><strong>Purchase Order</strong></td><td>{{ sample.po }}</td>
+          </tr>
+          <tr>
+            <td><strong>Tracking Number</strong></td><td>{{ sample.tracking }}</td>
+          </tr>
+          <tr>
+            <canvas id="myChart" width="400" height="400"></canvas>
+            <script>
+                  var ctx = document.getElementById("myChart");
+                  var myChart = new Chart(ctx, {
+                      type: 'horizontalBar',
+                      data: {
+                          labels: {{sample.names|safe}},
+                          datasets: [{
+                              label: '% of Reads',
+                              data: {{sample.vals|safe}}
+                          }]
+                      }
+                  });
+            </script>
+          </tr>
+          <tr>
+            <td><strong>Comments</strong></td><td>{{ sample.comments }}</td>
+          </tr>
+          <td><strong>MCA</strong></td><td>
+            {{ sample.str_convert }}
+          </td>
+          <!-- <tr>
+          <td><strong>Dump</strong></td><td>{{ sample.barchart|safe }}</td>
+          </tr> -->
+
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}

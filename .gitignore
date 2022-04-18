@@ -1,0 +1,6 @@
+venv
+project.db
+reorder.sqlite3
+static
+media
+**/__pycache__/

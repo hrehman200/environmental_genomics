@@ -11,6 +11,7 @@ from markdownx import urls as markdownx
 # from django.contrib.auth import views as auth_views
 
 from . import views
+from bugbase.models import Sample_Data
 
 admin.autodiscover()
 
@@ -32,7 +33,7 @@ urlpatterns += [
 
     path('accounts/', include('django.contrib.auth.urls')),
     url(r'^$', views.index, name='index'),
-
+    path('sample/<int:sample_id>', views.sample_data)
 ]
 
 

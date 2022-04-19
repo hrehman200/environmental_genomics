@@ -1,0 +1,102 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<style>
+    .selectpicker {
+        width: 80% !important;
+    }
+</style>
+
+<div class="row" >
+    <div class="col-sm-2" >
+        <select class="selectpicker" multiple>
+            {% for k in kingdoms %}
+                <option>{{ k.kingdom }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="col-sm-2" >
+        <select class="selectpicker" multiple>
+            {% for k in phylums %}
+                <option>{{ k.phylum }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="col-sm-2" >
+        <select class="selectpicker" multiple>
+            {% for k in klass %}
+                <option>{{ k.klass }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="col-sm-2" >
+        <select class="selectpicker" multiple>
+            {% for k in orders %}
+                <option>{{ k.order }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="col-sm-2" >
+        <select class="selectpicker" multiple>
+            {% for k in families %}
+                <option>{{ k.family }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="col-sm-2" >
+        <select class="selectpicker" multiple>
+            {% for k in genus %}
+                <option>{{ k.genus }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+ </div>
+
+ <div class="row">
+     <div class="">
+         
+     </div>
+ </div>
+
+
+<h3>Sample Data</h3>
+
+<div class="row">
+    <div class="col-md-12">
+        <table class="table table-striped">
+            <tr>
+                <th>Kingdom</th>
+                <th>Phylum</th>
+                <th>Klass</th>
+                <th>Order</th>
+                <th>Family</th>
+                <th>Counts</th>
+                <th>Rel. Freq</th>
+            </tr>
+            {% for s in sample_data %}
+                <tr>
+                    <td>{{ s.kingdom }}</td>
+                    <td>{{ s.phylum }}</td>
+                    <td>{{ s.klass }}</td>
+                    <td>{{ s.order }}</td>
+                    <td>{{ s.family }}</td>
+                    <td>{{ s.counts }}</td>
+                    <td><small>{{ s.rel_freq }}</small></td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+
+<script>
+    
+</script>
+
+{% endblock content %}

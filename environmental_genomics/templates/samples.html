@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<h3>Your Samples</h3>
+
+<div class="row">
+    <div class="col-md-12">
+        <table class="table table-striped">
+            <tr>
+                <th>ID</th>
+                <th>Note</th>
+                <th>Site</th>
+                <th>Date Samples</th>
+            </tr>
+            {% for s in samples %}
+                <tr>
+                    <td><a href="{% url 'sample' s.id %}">{{ s.id }}</a></td>
+                    <td>{{ s.note }}</td>
+                    <td>{{ s.site }}</td>
+                    <td>{{ s.date_sampled }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+
+{% endblock %}

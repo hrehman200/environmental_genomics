@@ -15,7 +15,7 @@
             </tr>
             {% for s in samples %}
                 <tr>
-                    <td><a href="{% url 'sample' s.id %}">{{ s.id }}</a></td>
+                    <td><a href="sample/{{ s.id }}">{{ s.id }}</a></td>
                     <td>{{ s.note }}</td>
                     <td>{{ s.site }}</td>
                     <td>{{ s.date_sampled }}</td>

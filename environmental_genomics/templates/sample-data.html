@@ -3,14 +3,14 @@
 {% block content %}
 
 <style>
-    .selectpicker {
-        width: 80% !important;
+    .bootstrap-select {
+        width: 90% !important;
     }
 </style>
 
-<div class="row" >
+<div class="row mt-3 mb-3" >
     <div class="col-sm-2" >
-        <select class="selectpicker" multiple>
+        <select class="selectpicker" multiple title="Kingdom" id="sel-kingdom">
             {% for k in kingdoms %}
                 <option>{{ k.kingdom }}</option>
             {% endfor %}
@@ -18,7 +18,7 @@
     </div>
 
     <div class="col-sm-2" >
-        <select class="selectpicker" multiple>
+        <select class="selectpicker" multiple title="Phylums" id="sel-phylum">
             {% for k in phylums %}
                 <option>{{ k.phylum }}</option>
             {% endfor %}
@@ -26,7 +26,7 @@
     </div>
 
     <div class="col-sm-2" >
-        <select class="selectpicker" multiple>
+        <select class="selectpicker" multiple title="Klass" id="sel-klass">
             {% for k in klass %}
                 <option>{{ k.klass }}</option>
             {% endfor %}
@@ -34,7 +34,7 @@
     </div>
 
     <div class="col-sm-2" >
-        <select class="selectpicker" multiple>
+        <select class="selectpicker" multiple title="Order" id="sel-order">
             {% for k in orders %}
                 <option>{{ k.order }}</option>
             {% endfor %}
@@ -42,31 +42,51 @@
     </div>
 
     <div class="col-sm-2" >
-        <select class="selectpicker" multiple>
+        <select class="selectpicker" multiple title="Family" id="sel-family">
             {% for k in families %}
                 <option>{{ k.family }}</option>
             {% endfor %}
         </select>
     </div>
 
-    <div class="col-sm-2" >
-        <select class="selectpicker" multiple>
+    <!-- <div class="col-sm-2" >
+        <select class="selectpicker" multiple title="Genus" id="sel-genus">
             {% for k in genus %}
                 <option>{{ k.genus }}</option>
             {% endfor %}
         </select>
-    </div>
+    </div> -->
 
  </div>
 
- <div class="row">
-     <div class="">
-         
+ <div class="row mt-3 mb-3">
+     <div class="col-3">
+        <div class="input-group">
+            <div class="input-group-prepend">
+              <span class="input-group-text" id="">Genus</span>
+            </div>
+            <input type="text" class="form-control" id="txt-genus">
+        </div>
+    </div>
+
+    <div class="col-3">
+        <div class="input-group">
+            <div class="input-group-prepend">
+                <span class="input-group-text" id="">Rel Freq. > </span>
+              </div>
+            <input type="number" class="form-control" value="0.1" id="txt-rel-freq">
+          </div>
      </div>
  </div>
 
 
-<h3>Sample Data</h3>
+<div class="row">
+    <div class="col-12">
+        <h3>Sample Data</h3>
+        <button class="btn btn-primary btn-icicle">View Icicle></button>
+    </div>
+</div>
+
 
 <div class="row">
     <div class="col-md-12">
@@ -77,26 +97,207 @@
                 <th>Klass</th>
                 <th>Order</th>
                 <th>Family</th>
+                <th>Genus</th>
                 <th>Counts</th>
                 <th>Rel. Freq</th>
             </tr>
-            {% for s in sample_data %}
-                <tr>
-                    <td>{{ s.kingdom }}</td>
-                    <td>{{ s.phylum }}</td>
-                    <td>{{ s.klass }}</td>
-                    <td>{{ s.order }}</td>
-                    <td>{{ s.family }}</td>
-                    <td>{{ s.counts }}</td>
-                    <td><small>{{ s.rel_freq }}</small></td>
-                </tr>
-            {% endfor %}
+            <tbody id="tblSampleData">
+                {% for s in sample_data %}
+                    <tr>
+                        <td class="kingdom">{{ s.kingdom }}</td>
+                        <td class="phylum">{{ s.phylum }}</td>
+                        <td class="klass">{{ s.klass }}</td>
+                        <td class="order">{{ s.order }}</td>
+                        <td class="family">{{ s.family }}</td>
+                        <td class="genus">{{ s.genus }}</td>
+                        <td class="counts">{{ s.counts }}</td>
+                        <td class="relfreq"><small>{{ s.rel_freq|floatformat:4 }}</small></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
         </table>
     </div>
 </div>
 
+<script src="//d3js.org/d3.v4.min.js"></script>
+
 <script>
-    
+
+    function drawIcicle() {
+
+        var width = 960,
+            height = 500;
+
+        var x = d3.scaleLinear()
+            .range([0, width]);
+
+        var y = d3.scaleLinear()
+            .range([0, height]);
+
+        var color = d3.scaleOrdinal(d3.schemeCategory20c);
+
+        var partition = d3.partition()
+            .size([width, height])
+            .padding(0)
+            .round(true);
+
+        var svg = d3.select("body").append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        var rect = svg.selectAll("rect");
+
+        root = tableToJson();
+        console.log(root);
+
+        var groupedData = d3.nest()
+            .key(function (d) { return d.kingdom; })
+            .key(function (d) { return d.phylum; })
+            .key(function (d) { return d.klass; })
+            .key(function (d) { return d.order; })
+            .key(function (d) { return d.family; })
+            .key(function (d) { return d.genus; })
+            .entries(root);
+
+        console.log(groupedData);
+
+        // root = d3.hierarchy(d3.entries(root)[0], function(d) {
+        //     return d3.entries(d.value)
+        //     })
+        //     .sum(function(d) { return d.value })
+        //     .sort(function(a, b) { return b.value - a.value; });
+
+        // partition(root);
+
+        // rect = rect
+        //     .data(root.descendants())
+        //     .enter().append("rect")
+        //     .attr("x", function(d) { return d.x0; })
+        //     .attr("y", function(d) { return d.y0; })
+        //     .attr("width", function(d) { return d.x1 - d.x0; })
+        //     .attr("height", function(d) { return d.y1 - d.y0; })
+        //     .attr("fill", function(d) { return color((d.children ? d : d.parent).data.key); })
+        //     .on("click", clicked);
+    }
+
+    function clicked(d) {
+        x.domain([d.x0, d.x1]);
+        y.domain([d.y0, height]).range([d.depth ? 20 : 0, height]);
+
+        rect.transition()
+            .duration(750)
+            .attr("x", function(d) { return x(d.x0); })
+            .attr("y", function(d) { return y(d.y0); })
+            .attr("width", function(d) { return x(d.x1) - x(d.x0); })
+            .attr("height", function(d) { return y(d.y1) - y(d.y0); });
+    }
+
+    function tableToJson() {
+        var data = [];
+        var rows = $("table tr:visible");
+
+        var headings = $(rows[i]).find("th");
+                
+        for (var i = 0; i < rows.length; i++) {
+            var row = [], cols = $(rows[i]).find("td");
+                    
+            data.push({
+                kingdom: $(cols[0]).text(),
+                phylum: $(cols[1]).text(),
+                class: $(cols[2]).text(),
+                order: $(cols[3]).text(),
+                family: $(cols[4]).text(),
+                genus: $(cols[5]).text(),
+                counts: $(cols[6]).text(),
+                relfreq: $(cols[7]).text(),
+            });
+        }
+        return data;
+    }
+
+    function htmlToCSV(html, filename) {
+        var data = [];
+        var rows = $("table tr:visible");
+                
+        for (var i = 0; i < rows.length; i++) {
+            var row = [], cols = $(rows[i]).find("td, th");
+                    
+            for (var j = 0; j < cols.length; j++) {
+                row.push($(cols[j]).text());
+            }
+                    
+            data.push(row.join(","));	
+        }
+        return data;
+    }
+
+    $(document).ready(function() {
+        // make contains case insensitive
+        jQuery.expr[':'].contains = function(a, i, m) {
+            return jQuery(a).text().toUpperCase()
+                .indexOf(m[3].toUpperCase()) >= 0;
+        };
+
+        function filterRecords() {
+            $('#tblSampleData tr').show();
+
+            if($('#txt-genus').val())
+                $('#tblSampleData .genus:not(:contains("' + $('#txt-genus').val() + '"))').parent().hide();
+
+            $('#tblSampleData tr').each(function(index, el) {
+
+                if($('#sel-kingdom').val().length > 0) {
+                    if($.inArray($(el).find('.kingdom').text(), $('#sel-kingdom').val()) == -1) {
+                        $(el).hide();
+                    }
+                }
+
+                if($('#sel-phylum').val().length > 0) {
+                    if($.inArray($(el).find('.phylum').text(), $('#sel-phylum').val()) == -1) {
+                        $(el).hide();
+                    }
+                }
+
+                if($('#sel-klass').val().length > 0) {
+                    if($.inArray($(el).find('.klass').text(), $('#sel-klass').val()) == -1) {
+                        $(el).hide();
+                    }
+                }
+
+                if($('#sel-order').val().length > 0) {
+                    if($.inArray($(el).find('.order').text(), $('#sel-order').val()) == -1) {
+                        $(el).hide();
+                    }
+                }
+
+                if($('#sel-family').val().length > 0) {
+                    if($.inArray($(el).find('.family').text(), $('#sel-family').val()) == -1) {
+                        $(el).hide();
+                    }
+                }
+
+                if(Number($(el).find('.relfreq').text()) <= Number($('#txt-rel-freq').val())) {
+                    $(el).hide();
+                }
+            });
+        }
+
+        $('#txt-genus').on('change keyup', function() {
+            filterRecords();
+        })
+
+        $('#txt-rel-freq').on('change keyup', function() {
+            filterRecords();
+        })
+
+        $('#sel-kingdom, #sel-phylum, #sel-klass, #sel-order, #sel-family').on('change', function(e) {
+            filterRecords();
+        })
+
+        $('.btn-icicle').click(function(e) {
+            drawIcicle();
+        })
+    });
 </script>
 
 {% endblock content %}

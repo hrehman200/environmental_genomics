@@ -77,13 +77,16 @@
             <input type="number" class="form-control" value="0.1" id="txt-rel-freq">
           </div>
      </div>
+
+     <div class="col-3">
+        <button class="btn btn-primary btn-icicle">View Icicle</button>
+     </div>
  </div>
 
 
 <div class="row">
     <div class="col-12">
         <h3>Sample Data</h3>
-        <button class="btn btn-primary btn-icicle">View Icicle></button>
     </div>
 </div>
 
@@ -116,6 +119,10 @@
                 {% endfor %}
             </tbody>
         </table>
+
+        <div id="chart">
+
+        </div>
     </div>
 </div>
 
@@ -125,8 +132,8 @@
 
     function drawIcicle() {
 
-        var width = 960,
-            height = 500;
+        var width = $('#chart').width(),
+            height = 600;
 
         var x = d3.scaleLinear()
             .range([0, width]);
@@ -134,23 +141,23 @@
         var y = d3.scaleLinear()
             .range([0, height]);
 
-        var color = d3.scaleOrdinal(d3.schemeCategory20c);
+        var partition = data => {
+            const root = d3.hierarchy(data)
+                .sum(d => +d.counts)
+                .sort((a, b) => b.height - a.height || b.counts - a.counts);  
+            return d3.partition()
+                .size([height, (root.height + 1) * width / 3])
+                (root);
+        }
 
-        var partition = d3.partition()
-            .size([width, height])
-            .padding(0)
-            .round(true);
-
-        var svg = d3.select("body").append("svg")
+        var svg = d3.select("#chart").append("svg")
             .attr("width", width)
             .attr("height", height);
-
-        var rect = svg.selectAll("rect");
 
         root = tableToJson();
         console.log(root);
 
-        var groupedData = d3.nest()
+        groupedData = d3.nest()
             .key(function (d) { return d.kingdom; })
             .key(function (d) { return d.phylum; })
             .key(function (d) { return d.klass; })
@@ -159,37 +166,101 @@
             .key(function (d) { return d.genus; })
             .entries(root);
 
-        console.log(groupedData);
+        if(groupedData[0].key == '')
+            groupedData.shift();
 
-        // root = d3.hierarchy(d3.entries(root)[0], function(d) {
-        //     return d3.entries(d.value)
-        //     })
-        //     .sum(function(d) { return d.value })
-        //     .sort(function(a, b) { return b.value - a.value; });
+        var data = convertData(groupedData)
+        data = data[0];
+        console.log(JSON.stringify(data, null, 1))
 
-        // partition(root);
 
-        // rect = rect
-        //     .data(root.descendants())
-        //     .enter().append("rect")
-        //     .attr("x", function(d) { return d.x0; })
-        //     .attr("y", function(d) { return d.y0; })
-        //     .attr("width", function(d) { return d.x1 - d.x0; })
-        //     .attr("height", function(d) { return d.y1 - d.y0; })
-        //     .attr("fill", function(d) { return color((d.children ? d : d.parent).data.key); })
-        //     .on("click", clicked);
+        root = partition(data)
+        focus = root
+
+        var color = d3.scaleOrdinal(d3.quantize(d3.interpolateRainbow, 12 + 1))
+        var format = d3.format(",d")
+
+        const cell = svg
+            .selectAll("g")
+            .data(root.descendants())
+            .enter().append("g")
+            .attr("transform", d => `translate(${d.y0},${d.x0})`);
+
+        const rect = cell.append("rect")
+            .attr("width", d => d.y1 - d.y0 - 1)
+            .attr("height", d => rectHeight(d))
+            .attr("fill-opacity", 0.6)
+            .attr("fill", d => {
+                if (!d.depth) return "#ccc";
+                while (d.depth > 1) d = d.parent;
+                return color(d.data.name);
+            })
+            .style("cursor", "pointer")
+            .on("click", clicked);
+
+        const text = cell.append("text")
+            .style("user-select", "none")
+            .attr("pointer-events", "none")
+            .attr("x", 4)
+            .attr("y", 13)
+            .attr("fill-opacity", d => +labelVisible(d));
+
+        text.append("tspan")
+            .text(d => d.data.name);
+
+        const tspan = text.append("tspan")
+            .attr("fill-opacity", d => labelVisible(d) * 0.7)
+            .text(d => ` ${format(d.value)}`);
+
+        cell.append("title")
+            .text(d => `${d.ancestors().map(d => d.data.name).reverse().join("/")}\n${format(d.value)}`);
+
+        function clicked(p) {
+            console.log("0000")
+            console.log(p)
+            focus = focus === p ? p = p.parent : p;
+
+            root.each(d => d.target = {
+                x0: (d.x0 - p.x0) / (p.x1 - p.x0) * height,
+                x1: (d.x1 - p.x0) / (p.x1 - p.x0) * height,
+                y0: d.y0 - p.y0,
+                y1: d.y1 - p.y0
+            });
+
+            const t = cell.transition().duration(750)
+                .attr("transform", d => {
+                    return `translate(${d.target.y0},${d.target.x0})`
+                });
+
+            rect.transition(t).attr("height", d => rectHeight(d.target));
+            text.transition(t).attr("fill-opacity", d => +labelVisible(d.target));
+            tspan.transition(t).attr("fill-opacity", d => labelVisible(d.target) * 0.7);
+        }
+        
+        function rectHeight(d) {
+            return d.x1 - d.x0 - Math.min(1, (d.x1 - d.x0) / 2);
+        }
+
+        function labelVisible(d) {
+            return d.y1 <= width && d.y0 >= 0 && d.x1 - d.x0 > 16;
+        }
     }
 
-    function clicked(d) {
-        x.domain([d.x0, d.x1]);
-        y.domain([d.y0, height]).range([d.depth ? 20 : 0, height]);
-
-        rect.transition()
-            .duration(750)
-            .attr("x", function(d) { return x(d.x0); })
-            .attr("y", function(d) { return y(d.y0); })
-            .attr("width", function(d) { return x(d.x1) - x(d.x0); })
-            .attr("height", function(d) { return y(d.y1) - y(d.y0); });
+    function convertData(data) {
+        var converted = data.map((kingdom) => {
+            return {name:kingdom.key, children: kingdom.values.map((phylum) => {
+                return {name:phylum.key, children: phylum.values.map((klass) => {
+                    return {name:klass.key, children: klass.values.map((order) => {
+                        return {name:order.key, children: order.values.map((family) => {
+                            return {name:family.key, children:family.values.map((f) => {
+                                return {name:f.key, children:f.values};
+                            })}
+                        })}
+                    })}
+                })}
+            })}
+        })
+        return converted;
     }
 
     function tableToJson() {
@@ -204,7 +275,7 @@
             data.push({
                 kingdom: $(cols[0]).text(),
                 phylum: $(cols[1]).text(),
-                class: $(cols[2]).text(),
+                klass: $(cols[2]).text(),
                 order: $(cols[3]).text(),
                 family: $(cols[4]).text(),
                 genus: $(cols[5]).text(),

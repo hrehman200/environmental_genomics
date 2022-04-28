@@ -80,6 +80,7 @@
 
      <div class="col-3">
         <button class="btn btn-primary btn-icicle">View Icicle</button>
+        <button class="btn btn-primary btn-csv">Download CSV</button>
      </div>
  </div>
 
@@ -286,7 +287,7 @@
         return data;
     }
 
-    function htmlToCSV(html, filename) {
+    function htmlToCSV(filename) {
         var data = [];
         var rows = $("table tr:visible");
                 
@@ -299,7 +300,18 @@
                     
             data.push(row.join(","));	
         }
-        return data;
+        downloadCSVFile(data.join("\n"), filename);
+    }
+
+    function downloadCSVFile(csv, filename) {
+        var csv_file, download_link;
+        csv_file = new Blob([csv], {type: "text/csv"});
+        download_link = document.createElement("a");
+        download_link.download = filename;
+        download_link.href = window.URL.createObjectURL(csv_file);
+        download_link.style.display = "none";
+        document.body.appendChild(download_link);
+        download_link.click();
     }
 
     $(document).ready(function() {
@@ -367,6 +379,10 @@
 
         $('.btn-icicle').click(function(e) {
             drawIcicle();
+        })
+
+        $('.btn-csv').click(function(e) {
+            htmlToCSV("Sample Data.csv");
         })
     });
 </script>

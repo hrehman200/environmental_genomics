@@ -8,6 +8,8 @@
     }
 </style>
 
+{% csrf_token %}
+
 <div class="row mt-3 mb-3" >
     <div class="col-sm-2" >
         <select class="selectpicker" multiple title="Kingdom" id="sel-kingdom">
@@ -20,7 +22,9 @@
     <div class="col-sm-2" >
         <select class="selectpicker" multiple title="Phylums" id="sel-phylum">
             {% for k in phylums %}
-                <option>{{ k.phylum }}</option>
+                {% if k.phylum %}
+                    <option>{{ k.phylum }}</option>
+                {% endif %}
             {% endfor %}
         </select>
     </div>
@@ -28,7 +32,9 @@
     <div class="col-sm-2" >
         <select class="selectpicker" multiple title="Klass" id="sel-klass">
             {% for k in klass %}
-                <option>{{ k.klass }}</option>
+                {% if k.klass %}
+                    <option>{{ k.klass }}</option>
+                {% endif %}
             {% endfor %}
         </select>
     </div>
@@ -36,7 +42,9 @@
     <div class="col-sm-2" >
         <select class="selectpicker" multiple title="Order" id="sel-order">
             {% for k in orders %}
-                <option>{{ k.order }}</option>
+                {% if k.order %}
+                    <option>{{ k.order }}</option>
+                {% endif %}
             {% endfor %}
         </select>
     </div>
@@ -44,7 +52,9 @@
     <div class="col-sm-2" >
         <select class="selectpicker" multiple title="Family" id="sel-family">
             {% for k in families %}
-                <option>{{ k.family }}</option>
+                {% if k.family %}
+                    <option>{{ k.family }}</option>
+                {% endif %}
             {% endfor %}
         </select>
     </div>
@@ -106,20 +116,13 @@
                 <th>Rel. Freq</th>
             </tr>
             <tbody id="tblSampleData">
-                {% for s in sample_data %}
-                    <tr>
-                        <td class="kingdom">{{ s.kingdom }}</td>
-                        <td class="phylum">{{ s.phylum }}</td>
-                        <td class="klass">{{ s.klass }}</td>
-                        <td class="order">{{ s.order }}</td>
-                        <td class="family">{{ s.family }}</td>
-                        <td class="genus">{{ s.genus }}</td>
-                        <td class="counts">{{ s.counts }}</td>
-                        <td class="relfreq"><small>{{ s.rel_freq|floatformat:4 }}</small></td>
-                    </tr>
-                {% endfor %}
+                
             </tbody>
         </table>
+
+        <ul class="pagination">
+            <li class="page-item"><a class="page-link" href="#"></a></li>
+        </ul>
 
         <div id="chart">
 
@@ -130,6 +133,19 @@
 <script src="//d3js.org/d3.v4.min.js"></script>
 
 <script>
+
+    function csrfSafeMethod(method) {
+        // these HTTP methods do not require CSRF protection
+        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+    }
+
+    $.ajaxSetup({
+        beforeSend: function(xhr, settings) {
+            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                xhr.setRequestHeader("X-CSRFToken", jQuery("[name=csrfmiddlewaretoken]").val());
+            }
+        }
+    });
 
     function drawIcicle() {
 
@@ -324,45 +340,65 @@
         };
 
         function filterRecords() {
-            $('#tblSampleData tr').show();
 
-            if($('#txt-genus').val())
-                $('#tblSampleData .genus:not(:contains("' + $('#txt-genus').val() + '"))').parent().hide();
+            var params = {
+                'page': $('.page-item.active').text() > 0 ? $('.page-item.active').text() : 1
+            };
 
-            $('#tblSampleData tr').each(function(index, el) {
+            if($('#txt-genus').val()) {
+                params['genus'] = $('#txt-genus').val()
+            }
 
-                if($('#sel-kingdom').val().length > 0) {
-                    if($.inArray($(el).find('.kingdom').text(), $('#sel-kingdom').val()) == -1) {
-                        $(el).hide();
+            if($('#sel-kingdom').val().length > 0) {
+                params['kingdom'] = $('#sel-kingdom').val()
+            }
+
+            if($('#sel-phylum').val().length > 0) {
+                params['phylum'] = $('#sel-phylum').val()
+            }
+
+            if($('#sel-klass').val().length > 0) {
+                params['klass'] = $('#sel-klass').val()
+            }
+
+            if($('#sel-order').val().length > 0) {
+                params['order'] = $('#sel-order').val()
+            }
+
+            if($('#sel-family').val().length > 0) {
+                params['family'] = $('#sel-family').val()
+            }
+
+            params['rel_freq'] = $('#txt-rel-freq').val()
+
+            $('#tblSampleData, .pagination').html('');
+
+            $.ajax({
+                url: "/sample/{{ sample_id }}",
+                type: "post",
+                data: params ,
+                dataType: 'json',
+                success: function (response) {
+                    console.log(response)
+                    for(let row of response.results) {
+                        $('#tblSampleData').append(`<tr>
+                            <td>${row.kingdom}</td>
+                            <td>${row.phylum}</td>
+                            <td>${row.klass}</td>
+                            <td>${row.order}</td>
+                            <td>${row.family}</td>
+                            <td>${row.genus}</td>
+                            <td>${row.counts}</td>
+                            <td>${parseFloat(row.rel_freq).toFixed(4)}</td>
+                        </tr>`);
                     }
-                }
 
-                if($('#sel-phylum').val().length > 0) {
-                    if($.inArray($(el).find('.phylum').text(), $('#sel-phylum').val()) == -1) {
-                        $(el).hide();
+                    for(let i of response.page_range) {
+                        $('.pagination').append(`<li class="page-item ${response.page==i?'active':''}"><a class="page-link" href="javascript:;">${i}</a></li>`);
                     }
-                }
-
-                if($('#sel-klass').val().length > 0) {
-                    if($.inArray($(el).find('.klass').text(), $('#sel-klass').val()) == -1) {
-                        $(el).hide();
-                    }
-                }
-
-                if($('#sel-order').val().length > 0) {
-                    if($.inArray($(el).find('.order').text(), $('#sel-order').val()) == -1) {
-                        $(el).hide();
-                    }
-                }
-
-                if($('#sel-family').val().length > 0) {
-                    if($.inArray($(el).find('.family').text(), $('#sel-family').val()) == -1) {
-                        $(el).hide();
-                    }
-                }
-
-                if(Number($(el).find('.relfreq').text()) <= Number($('#txt-rel-freq').val())) {
-                    $(el).hide();
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    console.log(textStatus, errorThrown);
                 }
             });
         }
@@ -386,6 +422,14 @@
         $('.btn-csv').click(function(e) {
             htmlToCSV("Sample Data.csv");
         })
+
+        $('body').on('click', '.page-item', function(e) {
+            $('.page-item').removeClass('active')
+            $(this).addClass('active')
+            filterRecords();
+        })
+
+        filterRecords();
     });
 </script>
 

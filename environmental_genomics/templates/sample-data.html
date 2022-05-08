@@ -375,30 +375,40 @@
 
             params['rel_freq'] = $('#txt-rel-freq').val()
 
-            $('#tblSampleData, .pagination').html('');
+            if(!csv)
+                $('#tblSampleData, .pagination').html('');
 
             $.ajax({
                 url: "/sample/{{ sample_id }}",
                 type: "post",
                 data: params ,
-                dataType: 'json',
+                //dataType: 'json',
                 success: function (response) {
-                    console.log(response)
-                    for(let row of response.results) {
-                        $('#tblSampleData').append(`<tr>
-                            <td>${row.kingdom}</td>
-                            <td>${row.phylum}</td>
-                            <td>${row.klass}</td>
-                            <td>${row.order}</td>
-                            <td>${row.family}</td>
-                            <td>${row.genus}</td>
-                            <td>${row.counts}</td>
-                            <td>${parseFloat(row.rel_freq).toFixed(4)}</td>
-                        </tr>`);
-                    }
+                    if(!csv) {
+                        console.log(response)
+                        for(let row of response.results) {
+                            $('#tblSampleData').append(`<tr>
+                                <td>${row.kingdom}</td>
+                                <td>${row.phylum}</td>
+                                <td>${row.klass}</td>
+                                <td>${row.order}</td>
+                                <td>${row.family}</td>
+                                <td>${row.genus}</td>
+                                <td>${row.counts}</td>
+                                <td>${parseFloat(row.rel_freq).toFixed(4)}</td>
+                            </tr>`);
+                        }
 
-                    for(let i of response.page_range) {
-                        $('.pagination').append(`<li class="page-item ${response.page==i?'active':''}"><a class="page-link" href="javascript:;">${i}</a></li>`);
+                        for(let i of response.page_range) {
+                            $('.pagination').append(`<li class="page-item ${response.page==i?'active':''}"><a class="page-link" href="javascript:;">${i}</a></li>`);
+                        }
+                    } else {
+                        var element = document.createElement('a');
+                        element.href = 'data:text/csv;charset=utf-8,' + encodeURI(response);
+                        element.target = '_blank';
+                        element.download = 'csv_data.csv';
+                        element.click();
+                        $(element).remove();
                     }
                 },
                 error: function(jqXHR, textStatus, errorThrown) {

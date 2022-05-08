@@ -20,7 +20,7 @@ def index(request):
 
 @login_required
 def sample_data(request, sample_id):
-    sample_data = Sample_Data.objects.filter(sample_id=sample_id)
+    sample_data = Sample_Data.objects.filter(sample_id=sample_id).filter(sample__user=request.user)
     kingdoms = sample_data.values('kingdom').distinct()
     phylums = sample_data.values('phylum').distinct()
     klass = sample_data.values('klass').distinct()

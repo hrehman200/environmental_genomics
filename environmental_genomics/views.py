@@ -1,12 +1,12 @@
 from random import sample
-from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.contrib.auth import authenticate, login
 
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Q
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
+import csv
 
 from bugbase.models import Sample, Sample_Data
 
@@ -42,6 +42,7 @@ def sample_data(request, sample_id):
         q_order = request.POST.getlist('order[]')
         q_family = request.POST.getlist('family[]')
         q_rel_freq = request.POST.get('rel_freq')
+        q_csv = request.POST.get('csv')
 
         if(q_genus):
             query &= Q(genus__icontains=q_genus)
@@ -68,9 +69,24 @@ def sample_data(request, sample_id):
                 query_family |= Q(family__startswith=value)
 
         sample_data = sample_data.exclude(Q(rel_freq__lte = q_rel_freq)).filter(query_kingdom, query_phylum, query_klass, query_order, query_family)
-        paginator = Paginator(sample_data, 100)
-        results = list(paginator.page(page).object_list.values('id', 'kingdom', 'phylum', 'klass', 'order', 'family', 'genus', 'counts', 'rel_freq'))
-        return JsonResponse({"results":results, 'page_range':list(paginator.page_range), 'page':page})
+                
+        if q_csv:
+            output = []
+            response = HttpResponse (content_type='text/csv')
+            response['Content-Disposition'] = 'attachment;filename=sampledata.csv'
+            
+            writer = csv.writer(response)
+            #Header
+            writer.writerow(['kingdom', 'phylum', 'klass', 'order', 'family', 'genus', 'counts', 'rel_freq'])
+            for s in sample_data:
+                output.append([s.kingdom, s.phylum, s.klass, s.order, s.family, s.genus, s.counts, '{:.2f}'.format(s.rel_freq)])
+            #CSV Data
+            writer.writerows(output)
+            return response
+        else:
+            paginator = Paginator(sample_data, 100)
+            results = list(paginator.page(page).object_list.values('id', 'kingdom', 'phylum', 'klass', 'order', 'family', 'genus', 'counts', 'rel_freq'))
+            return JsonResponse({"results":results, 'page_range':list(paginator.page_range), 'page':page})
 
     return render(request, 'sample-data.html', {
         'fluid': 1,

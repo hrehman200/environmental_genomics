@@ -339,7 +339,7 @@
                 .indexOf(m[3].toUpperCase()) >= 0;
         };
 
-        function filterRecords() {
+        function filterRecords(csv = false) {
 
             var params = {
                 'page': $('.page-item.active').text() > 0 ? $('.page-item.active').text() : 1
@@ -367,6 +367,10 @@
 
             if($('#sel-family').val().length > 0) {
                 params['family'] = $('#sel-family').val()
+            }
+
+            if(csv) {
+                params['csv'] = csv;
             }
 
             params['rel_freq'] = $('#txt-rel-freq').val()
@@ -420,7 +424,8 @@
         })
 
         $('.btn-csv').click(function(e) {
-            htmlToCSV("Sample Data.csv");
+            //htmlToCSV("Sample Data.csv");
+            filterRecords(true)
         })
 
         $('body').on('click', '.page-item', function(e) {

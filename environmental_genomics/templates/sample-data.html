@@ -139,6 +139,8 @@
 
 <script>
 
+    var currentRequest = null;
+
     function csrfSafeMethod(method) {
         // these HTTP methods do not require CSRF protection
         return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
@@ -148,6 +150,10 @@
         beforeSend: function(xhr, settings) {
             if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
                 xhr.setRequestHeader("X-CSRFToken", jQuery("[name=csrfmiddlewaretoken]").val());
+            }
+
+            if(currentRequest != null) {
+                currentRequest.abort();
             }
         }
     });
@@ -347,7 +353,7 @@
         function filterRecords(csv = false) {
 
             var params = {
-                'page': $('.page-item.active').text() > 0 ? $('.page-item.active').text() : 1
+                'page': $('.page-item.active').text() ? $('.page-item.active').text() : 1
             };
 
             if($('#txt-genus').val()) {
@@ -385,10 +391,10 @@
                 $('.spinner').show();
             }
 
-            $.ajax({
+            currentRequest = $.ajax({
                 url: "/sample/{{ sample_id }}",
                 type: "post",
-                data: params ,
+                data: params,
                 //dataType: 'json',
                 success: function (response) {
                     $('.spinner').hide();

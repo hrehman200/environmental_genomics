@@ -32,7 +32,7 @@ urlpatterns += [
     #path("", include("cms.urls")),
 
     path('accounts/', include('django.contrib.auth.urls')),
-    url(r'^$', views.index, name='index'),
+    path('samples/', views.index),
     path('sample/<int:sample_id>', views.sample_data)
 ]
 

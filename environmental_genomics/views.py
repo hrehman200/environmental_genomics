@@ -1,10 +1,11 @@
+from ast import NotEq
 from random import sample
 from django.shortcuts import get_object_or_404, render
 from django.contrib.auth import authenticate, login
 
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.db.models import Q
+from django.db.models import Q, Avg
 from django.http import HttpResponse, JsonResponse
 import csv
 
@@ -13,7 +14,10 @@ from bugbase.models import Sample, Sample_Data
 
 @login_required
 def index(request):
-    samples = Sample.objects.filter(user=request.user)
+    if request.user.is_superuser:
+        samples = Sample.objects.filter()
+    else:
+        samples = Sample.objects.filter(user=request.user)
     print(samples)
     return render(request, 'samples.html', {'samples': samples})
 
@@ -43,6 +47,7 @@ def sample_data(request, sample_id):
         q_family = request.POST.getlist('family[]')
         q_rel_freq = request.POST.get('rel_freq')
         q_csv = request.POST.get('csv')
+        q_taxonomy = request.POST.get('taxonomy')
 
         if(q_genus):
             query &= Q(genus__icontains=q_genus)
@@ -68,8 +73,13 @@ def sample_data(request, sample_id):
             for value in q_family:
                 query_family |= Q(family__startswith=value)
 
+        if(q_taxonomy):
+            taxonomy_data = []
+            taxonomy_data = list(sample_data.values_list(q_taxonomy).annotate(Avg('rel_freq')))
+            return JsonResponse({'taxonomy_data':taxonomy_data})
+        
         sample_data = sample_data.exclude(Q(rel_freq__lte = q_rel_freq)).filter(query_kingdom, query_phylum, query_klass, query_order, query_family)
-                
+
         if q_csv:
             output = []
             response = HttpResponse (content_type='text/csv')

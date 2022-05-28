@@ -59,6 +59,17 @@
         </select>
     </div>
 
+    <div class="col-sm-2" >
+        <select class="selectpicker" title="Taxonomy" id="sel-taxonomy">
+            <option>Kingdom</option>
+            <option>Phylum</option>
+            <option>Klass</option>
+            <option>Order</option>
+            <option>Family</option>
+            <option>Genus</option>
+        </select>
+    </div>
+
     <!-- <div class="col-sm-2" >
         <select class="selectpicker" multiple title="Genus" id="sel-genus">
             {% for k in genus %}
@@ -102,6 +113,24 @@
     </div>
 </div>
 
+<div class="row">
+    <div class="col-md-12 offset-4">
+        <table class="table table-striped w-25 text-center">
+            <tr>
+                <th>Taxonomy (<span id="selected-taxonomy"></span>)</th>
+                <th>Rel. Freq</th>
+            </tr>
+            <tbody id="tblTaxonomies">
+                
+            </tbody>
+            <tr class="spinner">
+                <td colspan="8" align="center"><div class="spinner-border" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div></td>
+            </tr>
+        </table>
+    </div>
+</div>
 
 <div class="row">
     <div class="col-md-12">
@@ -451,6 +480,34 @@
         $('.btn-csv').click(function(e) {
             //htmlToCSV("Sample Data.csv");
             filterRecords(true)
+        })
+
+        $('#sel-taxonomy').on('change', function(e) {
+            var taxonomy = $(this).val()
+            $('#selected-taxonomy').html(taxonomy);
+            $.ajax({
+                url: "/sample/{{ sample_id }}",
+                type: "post",
+                data: {
+                    taxonomy:taxonomy.toLowerCase()
+                },
+                //dataType: 'json',
+                success: function (response) {
+                    $('.spinner').hide();
+                    $('#tblTaxonomies').html('');
+                    console.log(response)
+                    for(let row of response.taxonomy_data) {
+                        $('#tblTaxonomies').append(`<tr>
+                            <td>${row[0]}</td>
+                            <td>${parseFloat(row[1]).toFixed(4)}</td>
+                        </tr>`);
+                    }
+                    
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    console.log(textStatus, errorThrown);
+                }
+            });
         })
 
         $('body').on('click', '.page-item', function(e) {

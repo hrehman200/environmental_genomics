@@ -241,5 +241,5 @@ THUMBNAIL_PROCESSORS = (
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 
-LOGIN_REDIRECT_URL = "/"
+LOGIN_REDIRECT_URL = "/samples"
 LOGOUT_REDIRECT_URL = "/accounts/login"
